@@ -160,7 +160,8 @@ describe("AI validation", () => {
     }
   });
 
-  it("GemmaService refuses clearly without a Google API key", async () => {    // tests/setup.ts clears GOOGLE_GENERATIVE_AI_API_KEY, so the provider
+  it("GemmaService refuses clearly without a Google API key", async () => {
+    // tests/setup.ts clears GOOGLE_GENERATIVE_AI_API_KEY, so the provider
     // must fail fast with an actionable message instead of calling Google.
     const svc = new GemmaService();
     await expect(svc.generateTurn(baseInput())).rejects.toThrow(

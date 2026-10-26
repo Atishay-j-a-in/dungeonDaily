@@ -1,30 +1,22 @@
-// Environment audio — deliberately separate from the DM voice
-// (speechSynthesis). Plays the static sound library from /public as a
-// looped ambient bed per scene environment, ducked while the DM speaks.
-// Falls back to generative filtered noise if an asset fails to load.
+// Environment music — deliberately separate from the DM voice.
+// Fetches ElevenLabs-generated beds from GET /api/v1/voice/music/:environment
+// (generated once on the server, then cached) and loops them per scene,
+// ducked while the DM speaks. No static /public mp3s, no generative-noise
+// fake — if the API is unreachable the bed stays silent.
 
-const ENVIRONMENT_TRACKS: Record<string, string[]> = {
-  forest: ["/forest.mp3", "/birds.mp3"],
-  cave: ["/cave-ambience.mp3"],
-  dungeon: ["/cave-ambience.mp3"],
-  castle: ["/rain.mp3"],
-  village: ["/birds.mp3"],
-  battlefield: ["/battle.mp3"],
-  mountain: ["/thunder.mp3"],
-  ruins: ["/waterfall.mp3"],
-};
+const API_BASE: string =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
+  "http://localhost:4000";
 
 const FULL_VOLUME = 0.35;
 const DUCKED_VOLUME = 0.08;
 
 export class EnvironmentAudio {
   private layers: HTMLAudioElement[] = [];
-  private noiseFallback: {
-    context: AudioContext;
-    gain: GainNode;
-    source: AudioBufferSourceNode;
-  } | null = null;
   private currentEnvironment = "";
+  private urlCache = new Map<string, string>();
+  private pending = new Map<string, Promise<string | null>>();
+  private loadGen = 0;
   // Optional WebAudio graph (master gain + analyser) feeding the orb's
   // energy meter. Attached only when the context actually runs — a suspended
   // context would silence the beds, so direct playback stays the default.
@@ -69,7 +61,6 @@ export class EnvironmentAudio {
       }
       this.currentEnvironment = environment;
       this.stopLayers();
-      this.stopNoise();
       if (this.graph) {
         try {
           this.graph.master.gain.setTargetAtTime(
@@ -81,37 +72,60 @@ export class EnvironmentAudio {
           // Ignore.
         }
       }
-      const tracks =
-        ENVIRONMENT_TRACKS[environment] ??
-        ENVIRONMENT_TRACKS.dungeon ??
-        [];
-      let started = false;
-      const graphed = this.ensureGraph();
-      for (const src of tracks) {
-        const audio = new Audio(src);
-        audio.loop = true;
-        // Graph mode drives volume from the master gain (element volume is
-        // captured inconsistently across browsers), so pin it to full.
-        audio.volume = graphed ? 1 : FULL_VOLUME;
-        if (graphed) this.attachLayer(audio);
-        audio.addEventListener("error", () => {
-          // Single static asset failed — fall back to generative noise.
-          if (!started) {
-            started = true;
-            this.startNoiseFallback();
-          }
-        });
-        audio.addEventListener("canplay", () => {
-          started = true;
-        });
-        this.layers.push(audio);
-      }
-      void this.playAll();
-      // If every asset 404s (silent failure), the error handlers above
-      // switch to the generative fallback.
+      const gen = ++this.loadGen;
+      void this.loadAndPlay(environment, gen);
     } catch {
       // Ambient audio is decorative — never break the game.
     }
+  }
+
+  private async loadAndPlay(
+    environment: string,
+    gen: number,
+  ): Promise<void> {
+    const url = await this.ensureUrl(environment);
+    if (!url || gen !== this.loadGen) return;
+    try {
+      const audio = new Audio(url);
+      audio.loop = true;
+      const graphed = this.ensureGraph();
+      audio.volume = graphed ? 1 : FULL_VOLUME;
+      if (graphed) this.attachLayer(audio);
+      if (gen !== this.loadGen) return;
+      this.layers.push(audio);
+      await this.playAll();
+    } catch {
+      // Ignore.
+    }
+  }
+
+  private ensureUrl(environment: string): Promise<string | null> {
+    const safe = /^[a-z0-9_]+$/i.test(environment) ? environment : "dungeon";
+    const cached = this.urlCache.get(safe);
+    if (cached) return Promise.resolve(cached);
+    const inflight = this.pending.get(safe);
+    if (inflight) return inflight;
+
+    const promise = (async (): Promise<string | null> => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/v1/voice/music/${encodeURIComponent(safe)}`,
+        );
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        if (blob.size === 0) return null;
+        const url = URL.createObjectURL(blob);
+        this.urlCache.set(safe, url);
+        return url;
+      } catch {
+        return null;
+      } finally {
+        this.pending.delete(safe);
+      }
+    })();
+
+    this.pending.set(safe, promise);
+    return promise;
   }
 
   /** Lower ambience while the DM voice speaks so narration stays clear. */
@@ -128,15 +142,6 @@ export class EnvironmentAudio {
       }
     } else {
       for (const layer of this.layers) layer.volume = DUCKED_VOLUME;
-    }
-    try {
-      this.noiseFallback?.gain.gain.setTargetAtTime(
-        0.012,
-        this.noiseFallback.context.currentTime,
-        0.2,
-      );
-    } catch {
-      // Ignore.
     }
   }
 
@@ -155,19 +160,11 @@ export class EnvironmentAudio {
     } else {
       for (const layer of this.layers) layer.volume = FULL_VOLUME;
     }
-    try {
-      this.noiseFallback?.gain.gain.setTargetAtTime(
-        0.05,
-        this.noiseFallback.context.currentTime,
-        0.4,
-      );
-    } catch {
-      // Ignore.
-    }
   }
 
   /** Stop (with a quick fade) all environment audio, e.g. on session end. */
   stop(fadeSeconds = 0.6): void {
+    this.loadGen += 1;
     this.currentEnvironment = "";
     const layers = this.layers;
     this.layers = [];
@@ -198,7 +195,6 @@ export class EnvironmentAudio {
         }
       }
     }, stepMs);
-    this.stopNoise();
   }
 
   private async playAll(): Promise<void> {
@@ -291,50 +287,5 @@ export class EnvironmentAudio {
       }
     }
     this.layers = [];
-  }
-
-  private startNoiseFallback(): void {
-    try {
-      if (this.noiseFallback) return;
-      const Ctor =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
-      if (!Ctor) return;
-      const context = new Ctor();
-      const gain = context.createGain();
-      gain.gain.value = 0.05;
-      gain.connect(context.destination);
-      const length = context.sampleRate * 2;
-      const buffer = context.createBuffer(1, length, context.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < length; i += 1) {
-        data[i] = Math.random() * 2 - 1;
-      }
-      const filter = context.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.value = 300;
-      const source = context.createBufferSource();
-      source.buffer = buffer;
-      source.loop = true;
-      source.connect(filter);
-      filter.connect(gain);
-      source.start();
-      this.noiseFallback = { context, gain, source };
-    } catch {
-      // Ignore.
-    }
-  }
-
-  private stopNoise(): void {
-    const fallback = this.noiseFallback;
-    this.noiseFallback = null;
-    if (!fallback) return;
-    try {
-      fallback.source.stop();
-      void fallback.context.close();
-    } catch {
-      // Ignore.
-    }
   }
 }

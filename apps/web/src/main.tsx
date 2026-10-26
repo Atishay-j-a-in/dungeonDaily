@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/react";
 import * as Sentry from "@sentry/react";
 import "./theme/tokens.css";
 import "./adventure/adventure.css";
+import "./landing/landing.css";
 import { AdventureRoot } from "./adventure/AdventureApp.js";
 import { initWebSentry } from "./observability/sentry.js";
 
@@ -35,17 +36,30 @@ createRoot(document.getElementById("root")!).render(
         publishableKey={publishableKey}
         appearance={{
           variables: {
-            colorPrimary: "#d4af5a",
-            colorBackground: "#101a14",
-            colorForeground: "#eceee6",
-            colorMutedForeground: "#a8b3a4",
-            colorInput: "#0a0f0c",
-            colorInputForeground: "#eceee6",
-            colorPrimaryForeground: "#101a14",
-            colorBorder: "#3a4a3e",
-            colorRing: "#d4af5a",
-            colorModalBackdrop: "rgba(5, 8, 6, 0.7)",
+            colorPrimary: "#f3c530",
+            colorBackground: "#0a1710",
+            colorForeground: "#f2f7ef",
+            colorMutedForeground: "#b7cdb9",
+            colorInput: "#06110a",
+            colorInputForeground: "#f2f7ef",
+            colorPrimaryForeground: "#0e1b10",
+            colorBorder: "#3a5c46",
+            colorRing: "#f3c530",
+            colorModalBackdrop: "rgba(3, 12, 7, 0.75)",
             borderRadius: "0.875rem",
+          },
+          elements: {
+            // Google / social buttons render with dark text on our dark
+            // modal — force white so the label stays readable.
+            socialConnectionButton: {
+              color: "#ffffff",
+            },
+            socialConnectionsProviderButton: {
+              color: "#ffffff",
+            },
+            socialConnectionsProviderButton__google: {
+              color: "#ffffff",
+            },
           },
         }}
       >

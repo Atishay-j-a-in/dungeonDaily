@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Show,
-  SignInButton,
-  SignUpButton,
   UserButton,
   useAuth,
   useUser,
 } from "@clerk/react";
 import * as Sentry from "@sentry/react";
 import { OrbCanvas, type OrbState } from "../components/OrbCanvas.js";
+import { LandingPage } from "../landing/LandingPage.js";
 import { EnvironmentAudio } from "../voice/environmentAudio.js";
 import { SfxEngine } from "../voice/sfx.js";
 import { useSpeechRecognition } from "../voice/useSpeechRecognition.js";
@@ -158,27 +157,7 @@ export function AdventureRoot() {
   return (
     <>
       <Show when="signed-out">
-        <div className="adv">
-          <div className="adv-start">
-            <h1 className="adv-display">DungeonsDaily</h1>
-            <p className="adv-lede">
-              Your voice, your body, and a dungeon that listens. Sign in to
-              keep your chronicle.
-            </p>
-            <div className="adv-login-buttons">
-              <SignInButton mode="modal">
-                <button className="adv-btn adv-btn-speak" type="button">
-                  Sign in
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="adv-btn adv-btn-quiet" type="button">
-                  Create account
-                </button>
-              </SignUpButton>
-            </div>
-          </div>
-        </div>
+        <LandingPage />
       </Show>
       <Show when="signed-in">
         <AdventureApp />
@@ -1037,8 +1016,16 @@ function AdventureApp() {
                     ? `Hold for ${session.currentExercise.durationSeconds} seconds`
                     : ""}
                 </p>
+                <button
+                  className="adv-btn adv-btn-speak adv-exercise-complete"
+                  onClick={() => void completeExercise()}
+                  disabled={busy}
+                >
+                  Complete exercise
+                </button>
                 <p className="adv-exercise-action-hint">
-                  Perform your movement, then speak or type your action (e.g. &ldquo;10 reps done&rdquo; or &ldquo;completed&rdquo;) to advance.
+                  Or speak your action (e.g. &ldquo;10 reps done&rdquo;) and let
+                  the Dungeon Master answer.
                 </p>
               </div>
             )}

@@ -104,25 +104,21 @@
 /* Base canvas size everywhere (the gate orbs have no stage wrapper) plus a
  * painted fallback behind the GL surface: if the GPU uploads nothing, the
  * ember glow shows instead of a blank box. */
+/* Base canvas is transparent — the shader's alpha aura floats the orb on any
+ * surface. The painted ember glow exists only behind a failed GL context. */
 .orb-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  background:
-    radial-gradient(
-      42% 42% at 50% 55%,
-      oklch(62% 0.12 82),
-      oklch(30% 0.06 160) 62%,
-      var(--bg-1) 78%
-    );
+  background: transparent;
 }
 
 canvas[data-nogl="true"] {
   background:
     radial-gradient(
       42% 42% at 50% 55%,
-      oklch(62% 0.12 82),
-      oklch(30% 0.06 160) 62%,
+      oklch(70% 0.16 84),
+      oklch(36% 0.09 155) 62%,
       var(--bg-1) 78%
     );
 }
@@ -147,6 +143,8 @@ canvas[data-nogl="true"] {
   font-size: var(--text-lead);
   line-height: 1.55;
   max-width: 34ch;
+  border-top: 1px solid oklch(70% 0.16 84 / 0.55);
+  padding-top: var(--space-3);
 }
 
 .adv-prompt {
@@ -171,7 +169,7 @@ canvas[data-nogl="true"] {
 
 .adv-exercise {
   background: var(--gold-wash);
-  border: 1px solid oklch(60% 0.1 82);
+  border: 1px solid oklch(70% 0.16 84);
   border-radius: var(--radius-md);
   padding: var(--space-4);
   display: flex;
@@ -202,6 +200,18 @@ canvas[data-nogl="true"] {
   padding-top: var(--space-2);
 }
 
+.adv-exercise-complete {
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+@media (min-width: 30rem) {
+  .adv-exercise-complete {
+    width: auto;
+    align-self: flex-start;
+  }
+}
+
 .adv-dock {
   position: sticky;
   bottom: 0;
@@ -209,7 +219,8 @@ canvas[data-nogl="true"] {
   flex-direction: column;
   gap: var(--space-3);
   background: var(--bg-0);
-  padding: var(--space-3) 0 var(--space-2);
+  padding: var(--space-3) 0
+    max(var(--space-2), env(safe-area-inset-bottom));
   z-index: var(--z-base);
   border-top: 1px solid var(--line-soft);
 }
@@ -261,18 +272,31 @@ canvas[data-nogl="true"] {
   transform: scale(0.985);
 }
 
+.adv-btn-quiet {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+@media (hover: hover) {
+  .adv-btn-quiet:hover {
+    border-color: var(--gold-deep);
+    background: var(--bg-3);
+  }
+}
+
 .adv-btn-listening {
-  background: #dc2626 !important;
-  color: #ffffff !important;
+  background: var(--ember) !important;
+  color: oklch(97% 0.01 28) !important;
   animation: pulseMic 1.2s infinite ease-in-out;
 }
 
 @keyframes pulseMic {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6);
+    box-shadow: 0 0 0 0 oklch(74% 0.18 28 / 0.55);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+    box-shadow: 0 0 0 8px oklch(74% 0.18 28 / 0);
   }
 }
 
@@ -287,14 +311,14 @@ canvas[data-nogl="true"] {
 .adv-input-large {
   flex: 1;
   min-width: 0;
-  font-size: 1.05rem !important;
+  font-size: 1.05rem;
   line-height: 1.5;
-  color: #ffffff !important;
-  background: #09130d !important;
-  border: 1.5px solid var(--line) !important;
-  border-radius: var(--radius-md) !important;
-  padding: var(--space-2) var(--space-4) !important;
-  min-height: 3.25rem !important;
+  color: var(--ink);
+  background: var(--bg-1);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  min-height: 3.25rem;
   letter-spacing: 0.015em;
   transition:
     border-color var(--dur-fast) ease,
@@ -302,15 +326,15 @@ canvas[data-nogl="true"] {
 }
 
 .adv-input-large::placeholder {
-  color: #8c9b90 !important;
+  color: var(--ink-faint);
   font-size: 0.95rem;
 }
 
 .adv-input-large:focus {
-  border-color: var(--gold) !important;
+  border-color: var(--gold);
   outline: none;
-  box-shadow: 0 0 12px rgba(212, 175, 90, 0.25);
-  background: #0c1810 !important;
+  box-shadow: 0 0 0 3px var(--gold-wash);
+  background: var(--bg-2);
 }
 
 .adv-btn-send {
@@ -365,6 +389,21 @@ canvas[data-nogl="true"] {
   cursor: default;
 }
 
+/* Sweaty-thumb ergonomics: bigger targets on touch devices */
+@media (pointer: coarse) {
+  .adv-btn {
+    min-height: 3rem;
+  }
+
+  .adv-btn-end {
+    min-height: 2.5rem;
+  }
+
+  .adv-disclosure summary {
+    min-height: 3rem;
+  }
+}
+
 /* Dungeon Master Thinking Display */
 .adv-dm-thinking-panel {
   display: flex;
@@ -376,10 +415,10 @@ canvas[data-nogl="true"] {
   border: 1px solid var(--gold-deep);
   background: radial-gradient(
     circle at 50% 50%,
-    rgba(212, 175, 90, 0.12),
-    rgba(15, 25, 20, 0.85)
+    rgba(243, 197, 48, 0.1),
+    rgba(6, 17, 11, 0.88)
   );
-  box-shadow: 0 0 25px rgba(212, 175, 90, 0.18);
+  box-shadow: 0 0 16px rgba(243, 197, 48, 0.14);
   animation: dmFadePulse 2s infinite ease-in-out;
   text-align: center;
   margin: var(--space-2) 0;
@@ -423,11 +462,11 @@ canvas[data-nogl="true"] {
 @keyframes dmFadePulse {
   0%, 100% {
     border-color: var(--line);
-    box-shadow: 0 0 15px rgba(212, 175, 90, 0.1);
+    box-shadow: 0 0 12px rgba(243, 197, 48, 0.08);
   }
   50% {
     border-color: var(--gold);
-    box-shadow: 0 0 30px rgba(212, 175, 90, 0.28);
+    box-shadow: 0 0 24px rgba(243, 197, 48, 0.2);
   }
 }
 
@@ -513,8 +552,8 @@ canvas[data-nogl="true"] {
 }
 
 .adv-notice {
-  border: 1px solid oklch(60% 0.1 78);
-  background: oklch(60% 0.1 78 / 0.1);
+  border: 1px solid oklch(72% 0.15 80);
+  background: oklch(72% 0.15 80 / 0.12);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-secondary);
@@ -550,8 +589,8 @@ canvas[data-nogl="true"] {
 }
 
 .adv-log {
-  background: oklch(8% 0.015 160);
-  color: oklch(84% 0.02 160);
+  background: oklch(10% 0.04 155);
+  color: oklch(88% 0.05 155);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
   padding: var(--space-4);
@@ -665,7 +704,7 @@ canvas[data-nogl="true"] {
   border-radius: var(--radius-lg);
   border-color: var(--gold-deep);
   box-shadow:
-    0 0 40px rgba(212, 175, 90, 0.3),
+    0 0 40px rgba(243, 197, 48, 0.3),
     0 20px 50px rgba(0, 0, 0, 0.7);
 }
 
@@ -936,4 +975,53 @@ canvas[data-nogl="true"] {
   font-size: var(--text-secondary);
   color: var(--gold-soft);
   font-variant-numeric: tabular-nums;
+}
+
+/* Narrow phones (360–430px): tighter rhythm, stacked dock, smaller orbs */
+
+@media (max-width: 26.25rem) {
+  .adv-main {
+    gap: var(--space-3);
+    padding-left: max(var(--space-3), env(safe-area-inset-left));
+    padding-right: max(var(--space-3), env(safe-area-inset-right));
+  }
+
+  .adv-title {
+    font-size: var(--text-body);
+  }
+
+  .adv-narration {
+    font-size: var(--text-body);
+    max-width: none;
+  }
+
+  .adv-trio {
+    gap: var(--space-2);
+    min-height: min(72vw, 20rem);
+  }
+
+  .orb-pick {
+    padding: var(--space-2) 0;
+    gap: var(--space-1);
+  }
+
+  .orb-pick-canvas {
+    width: min(30vw, 130px);
+  }
+
+  .adv-stage {
+    min-height: min(64vw, 17rem);
+  }
+
+  .adv-action-row {
+    flex-wrap: wrap;
+  }
+
+  .adv-btn-speak {
+    min-width: 6.5rem;
+  }
+
+  .adv-exercise {
+    padding: var(--space-3);
+  }
 }

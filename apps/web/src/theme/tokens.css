@@ -1,35 +1,37 @@
-/* Ember Dungeon theme: green-black stone surfaces, molten gold reserved for
- * the moments that matter (DM speech, exercise calls, victory). OKLCH
- * throughout; neutrals tinted toward the brand hue (160), never warm-gray. */
+/* Ember Dungeon theme, vibrant edition: dark stone saturated with bright
+ * dungeon green, molten gold for the moments that matter (DM speech,
+ * exercise calls, victory). OKLCH throughout; neutrals are tinted greens
+ * with real chroma — dark, never muddy. */
 
 :root {
   /* Surfaces (depth = lightness, same hue/chroma; no shadows in dark mode) */
-  --bg-0: oklch(11% 0.022 160);
-  --bg-1: oklch(15.5% 0.028 160);
-  --bg-2: oklch(20.5% 0.032 160);
-  --bg-3: oklch(25.5% 0.034 160);
+  --bg-0: oklch(13% 0.05 155);
+  --bg-1: oklch(18% 0.062 155);
+  --bg-2: oklch(23.5% 0.07 155);
+  --bg-3: oklch(29% 0.075 155);
 
-  /* Ink */
-  --ink: oklch(93% 0.018 160);
-  --ink-dim: oklch(76% 0.028 160);
-  --ink-faint: oklch(68% 0.028 160);
+  /* Ink — bright, faintly green, high lift off the dark stone */
+  --ink: oklch(96% 0.03 152);
+  --ink-dim: oklch(84% 0.07 155);
+  --ink-faint: oklch(73% 0.08 158);
 
   /* Gold accent: primary actions, DM speech, victory. Rare by design. */
-  --gold: oklch(79% 0.135 86);
-  --gold-soft: oklch(72% 0.1 86);
-  --gold-deep: oklch(60% 0.11 82);
-  --gold-wash: oklch(79% 0.135 86 / 0.09);
-  --on-gold: oklch(16% 0.03 160);
+  --gold: oklch(84% 0.16 90);
+  --gold-soft: oklch(77% 0.145 88);
+  --gold-deep: oklch(67% 0.14 84);
+  --gold-wash: oklch(84% 0.16 90 / 0.12);
+  --on-gold: oklch(15% 0.045 155);
 
-  /* Semantic (muted to sit inside the dungeon, never neon) */
-  --ember: oklch(66% 0.13 28);
-  --moss: oklch(76% 0.11 158);
-  --amber-note: oklch(78% 0.12 78);
+  /* Vibrant greens + semantics (bright enough to feel alive, AA on bg-0) */
+  --jade: oklch(84% 0.2 150);
+  --ember: oklch(72% 0.17 28);
+  --moss: oklch(84% 0.19 150);
+  --amber-note: oklch(84% 0.15 80);
 
   /* Hairlines, focus */
-  --line: oklch(29% 0.03 160);
-  --line-soft: oklch(23% 0.028 160);
-  --focus: oklch(79% 0.135 86);
+  --line: oklch(35% 0.06 155);
+  --line-soft: oklch(28% 0.052 155);
+  --focus: oklch(84% 0.16 90);
 
   /* Type: display serif for story content only; system sans for UI chrome */
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
@@ -89,7 +91,7 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Faint radial ember glow behind everything; static, zero motion cost */
+/* Radial ember glow behind everything; static, zero motion cost */
 body::before {
   content: "";
   position: fixed;
@@ -98,12 +100,12 @@ body::before {
   background:
     radial-gradient(
       60% 42% at 50% 0%,
-      oklch(24% 0.05 160),
+      oklch(30% 0.1 152),
       transparent 70%
     ),
     radial-gradient(
       34% 26% at 50% 108%,
-      oklch(30% 0.07 80 / 0.5),
+      oklch(40% 0.12 95 / 0.55),
       transparent 70%
     );
   pointer-events: none;

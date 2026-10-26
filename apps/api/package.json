@@ -11,10 +11,11 @@
     "ai:check": "tsx src/modules/ai/check.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.92",
+    "@ai-sdk/google": "^4.0.105",
     "@ai-sdk/openai-compatible": "^3.0.67",
     "@clerk/express": "^2.1.77",
     "@dungeonsdaily/shared": "workspace:*",
+    "@elevenlabs/elevenlabs-js": "^2.74.0",
     "@sentry/node": "^11.5.0",
     "ai": "^7.0.133",
     "cors": "^2.8.6",

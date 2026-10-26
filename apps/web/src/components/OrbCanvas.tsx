@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 
-// Immersive 3D WebGL Crystal Orb:
-// Real-time raymarched 3D crystal sphere with polyhedral gemstone facets,
-// Snell's Law optical refraction, internal volumetric 3D energy currents, pulsating
-// living core, and voice-reactive shockwaves that surge with the DM's voice.
-// Runs dependency-free with pure WebGL 1.0 shaders for 60fps across all devices.
+// Plasma Orb: smooth dependency-free WebGL 1.0 sphere filled with domain-warped
+// plasma currents — broad soft wisps, a breathing core, and voice-driven ripple
+// shockwaves that surge with the DM's analyser energy. States read plainly:
+// idle breathes, thinking spins an inward vortex, speaking ripples with the
+// voice, listening cools to teal, error flickers ember, awakening sends rings.
 
 export type OrbState =
   | "idle"
@@ -24,7 +24,7 @@ export interface OrbCanvasProps {
   energyRef?: React.MutableRefObject<number>;
   /** True = single static frame (reduced motion / stillness toggle). */
   still?: boolean;
-  /** spirit = soft glow; crystal = faceted refractive stone. */
+  /** spirit = airy glow; crystal = denser structured currents. */
   variant?: "spirit" | "crystal";
   /** Is this orb enlarged into hero focus? */
   enlarged?: boolean;
@@ -39,8 +39,8 @@ const TRIAL_PALETTES: Record<
   { base: [number, number, number]; core: [number, number, number] }
 > = {
   10: {
-    // Squire's Trial: Deep emerald living crystal with golden radiant sun energy
-    base: [0.03, 0.68, 0.35],
+    // Squire's Trial: Deep emerald living plasma with golden radiant core
+    base: [0.04, 0.8, 0.42],
     core: [0.92, 0.76, 0.12],
   },
   20: {
@@ -49,7 +49,7 @@ const TRIAL_PALETTES: Record<
     core: [0.05, 0.82, 0.96],
   },
   30: {
-    // Dragon's Vigil: Dragon heart crimson ruby with molten amber solar flares
+    // Dragon's Vigil: Dragon heart crimson ruby with molten amber flares
     base: [0.88, 0.14, 0.10],
     core: [0.98, 0.62, 0.08],
   },
@@ -59,7 +59,7 @@ const MOOD_PALETTES: Record<
   string,
   { base: [number, number, number]; core: [number, number, number] }
 > = {
-  calm: { base: [0.05, 0.62, 0.38], core: [0.85, 0.82, 0.25] },
+  calm: { base: [0.05, 0.74, 0.44], core: [0.85, 0.82, 0.25] },
   mysterious: { base: [0.10, 0.42, 0.88], core: [0.35, 0.78, 0.98] },
   tense: { base: [0.75, 0.48, 0.12], core: [0.95, 0.75, 0.25] },
   combat: { base: [0.85, 0.28, 0.10], core: [0.98, 0.58, 0.15] },
@@ -68,7 +68,7 @@ const MOOD_PALETTES: Record<
 };
 
 const DEFAULT_PALETTE = {
-  base: [0.10, 0.52, 0.72] as [number, number, number],
+  base: [0.08, 0.62, 0.7] as [number, number, number],
   core: [0.88, 0.72, 0.25] as [number, number, number],
 };
 
@@ -151,39 +151,7 @@ float noise2(vec2 p) {
   );
 }
 
-// Polyhedral Gemstone Facet Normal
-vec3 getFacetNormal(vec3 n, float cr, out float seamDist) {
-  if (cr < 0.02) {
-    seamDist = 1.0;
-    return n;
-  }
-  float bestDot = -2.0;
-  vec3 bestAxis = n;
-  const float phi = 1.61803398875;
-
-  vec3 a1 = normalize(vec3(1.0, phi, 0.0));
-  vec3 a2 = normalize(vec3(-1.0, phi, 0.0));
-  vec3 a3 = normalize(vec3(0.0, 1.0, phi));
-  vec3 a4 = normalize(vec3(0.0, -1.0, phi));
-  vec3 a5 = normalize(vec3(phi, 0.0, 1.0));
-  vec3 a6 = normalize(vec3(-phi, 0.0, 1.0));
-
-  #define TEST_AXIS(ax) { float dt = dot(n, ax); if(abs(dt) > bestDot) { bestDot = abs(dt); bestAxis = sign(dt) * ax; } }
-  TEST_AXIS(a1); TEST_AXIS(a2); TEST_AXIS(a3);
-  TEST_AXIS(a4); TEST_AXIS(a5); TEST_AXIS(a6);
-  TEST_AXIS(vec3(1.0, 0.0, 0.0));
-  TEST_AXIS(vec3(0.0, 1.0, 0.0));
-  TEST_AXIS(vec3(0.0, 0.0, 1.0));
-  TEST_AXIS(normalize(vec3(1.0, 1.0, 1.0)));
-  TEST_AXIS(normalize(vec3(-1.0, 1.0, 1.0)));
-  TEST_AXIS(normalize(vec3(1.0, -1.0, 1.0)));
-  TEST_AXIS(normalize(vec3(-1.0, -1.0, 1.0)));
-
-  seamDist = length(bestAxis - n);
-  return normalize(mix(n, bestAxis, cr * 0.72));
-}
-
-// ACES Film Tone Mapping curve: guarantees zero white clipping while preserving rich saturation
+// ACES Film Tone Mapping: zero white clipping, rich saturation
 vec3 toneMapACES(vec3 x) {
   float a = 2.51;
   float b = 0.03;
@@ -196,124 +164,123 @@ vec3 toneMapACES(vec3 x) {
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / min(u_res.x, u_res.y);
 
-  // 3D Perspective Ray
+  // Perspective ray toward the plasma sphere
   vec3 ro = vec3(0.0, 0.0, 2.2);
-  vec3 rd = normalize(vec3(uv - u_mouse * 0.12, -1.65));
+  vec3 rd = normalize(vec3(uv - u_mouse * 0.1, -1.65));
 
-  // Ray-Sphere Intersection
-  float R = 0.68;
+  float R = 0.7;
   float b = dot(ro, rd);
   float c = dot(ro, ro) - R * R;
   float h = b * b - c;
 
-  // Outer Atmosphere Aura & Particle Sparkles
+  // Shared state dynamics
+  float breath = 0.5 + 0.5 * sin(u_time * 1.3);
+  float swirl = 0.4 + u_speak * 1.5 + u_energy * 1.1 + u_think * 1.3 + u_awake * 1.7;
+  float glow = 0.32
+    + u_speak * (0.45 + 0.55 * u_energy)
+    + u_energy * 0.35
+    + u_awake * 0.5
+    + u_think * 0.18
+    + breath * 0.06;
+
+  // Outer aura halo: falloff measured from the sphere's projected silhouette
+  // (~0.55 for this camera) so the glow never fills the canvas as a flat
+  // square. Aura coverage becomes the fragment's alpha — the orb floats on
+  // whatever surface sits behind it instead of showing an opaque quad.
+  float bodyR = 0.55;
   float r2d = length(uv);
-  float auraDist = max(0.0, r2d - R * 0.88);
-  float aura = exp(-auraDist * 5.2) * (0.28 + u_speak * 0.45 + u_energy * 0.4 + u_awake * 0.45 + u_think * 0.25);
-  float spk = pow(noise2(uv * 18.0 + vec2(u_time * 0.35, -u_time * 0.25)), 9.0) * exp(-r2d * 2.8);
-  vec3 auraCol = u_base_col * aura * 0.85 + u_core_col * spk * 0.9;
+  float auraDist = max(0.0, r2d - bodyR);
+  float aura = exp(-auraDist * 7.0) * glow;
+  float auraA = exp(-auraDist * 10.0);
+  float spk = pow(noise2(uv * 16.0 + vec2(u_time * 0.3, -u_time * 0.22)), 10.0)
+    * exp(-r2d * 3.0)
+    * (0.3 + u_energy * 0.9 + u_awake * 0.8);
+  vec3 auraCol = u_base_col * aura * 0.8 + u_core_col * spk;
 
   if (h < 0.0) {
-    // Ray misses the crystal body: render soft ethereal outer mist
-    float vig = smoothstep(0.95, 0.25, r2d);
-    vec3 outAura = toneMapACES(auraCol * mix(0.4, 1.0, vig));
-    gl_FragColor = vec4(outAura, 1.0);
+    float vig = 1.0 - smoothstep(0.3, 1.0, r2d);
+    vec3 c = toneMapACES(auraCol * mix(0.35, 1.0, vig));
+    gl_FragColor = vec4(c, clamp(auraA + spk * 2.0, 0.0, 1.0));
     return;
   }
 
+  // March the sphere interior: soft domain-warped plasma, no facets
   float t_in = -b - sqrt(h);
   float t_out = -b + sqrt(h);
-
   vec3 p_in = ro + rd * t_in;
-  vec3 norm = normalize(p_in);
+  vec3 nrm = normalize(p_in);
 
-  float seamDist = 1.0;
-  vec3 fn = getFacetNormal(norm, u_crystal, seamDist);
-  float seam = smoothstep(0.20, 0.03, seamDist) * u_crystal;
+  float stepSize = (t_out - t_in) / 14.0;
+  vec3 pos = p_in + rd * stepSize * 0.5;
+  float freq = mix(2.7, 3.5, u_crystal);
+  vec3 accum = vec3(0.0);
 
-  // Snell's Law Refraction into crystal interior
-  vec3 r_dir = refract(rd, fn, 0.74);
-  if (dot(r_dir, r_dir) < 0.05) {
-    r_dir = reflect(rd, fn);
-  }
+  for (int i = 0; i < 14; i++) {
+    float rOrig = length(pos);
+    if (rOrig < R) {
+      // The core leans toward the pointer for a lived-in, reactive feel
+      vec3 pc = pos - vec3(u_mouse * 0.13, 0.0);
+      float rr = length(pc);
 
-  // Deep translucent gemstone body: keeps crystal dark and mysterious so light pops!
-  vec3 gemDark = u_base_col * 0.06 + vec3(0.005, 0.008, 0.008);
-
-  // Volumetric Living Energy Rays
-  vec3 accumEnergy = vec3(0.0);
-  float stepSize = (t_out - t_in) / 16.0;
-  vec3 curPos = p_in + r_dir * stepSize * 0.5;
-
-  float swirlSpeed = 0.75 + u_speak * 1.8 + u_energy * 1.5 + u_awake * 1.8 + u_think * 0.8;
-  float heartSpeed = 2.0 + u_speak * 2.5 + u_energy * 2.2 + u_awake * 2.2;
-  float heartPulse = sin(u_time * heartSpeed) * 0.5 + 0.5;
-
-  for (int i = 0; i < 16; i++) {
-    float r = length(curPos);
-    if (r < R) {
-      // 3D Vortex Swirl around Y-axis
-      float twist = (1.0 - r / R) * 2.6 + u_time * swirlSpeed;
-      float s = sin(twist);
+      // Slow Y-axis swirl; thinking adds inward vertical drift (vortex pull)
+      float twist = (1.0 - rOrig / R) * 2.2 + u_time * swirl;
       float cs = cos(twist);
-      vec3 twisted = vec3(curPos.x * cs - curPos.z * s, curPos.y, curPos.x * s + curPos.z * cs);
+      float sn = sin(twist);
+      vec3 sp = vec3(
+        pc.x * cs - pc.z * sn,
+        pc.y + u_time * (0.2 * u_think - 0.1),
+        pc.x * sn + pc.z * cs
+      );
 
-      // Living 3D Mana Turbulence
-      float n = fbm3(twisted * 4.2 - vec3(0.0, u_time * (swirlSpeed * 0.55), 0.0));
+      float n = fbm3(sp * freq);
+      float wisp = smoothstep(0.4, 0.78, n);
+      float core = exp(
+        -rr * (5.0 - breath * 0.7 - u_speak * 1.5 - u_energy * 1.0 - u_awake * 1.1)
+      );
 
-      // Living Pulsating Heart Core
-      float coreDensity = exp(-r * (4.8 - heartPulse * 1.2 - u_speak * 1.2 - u_energy * 1.0));
+      // Voice-reactive shockwave travelling outward through the plasma
+      float rip = sin(rr * 18.0 - u_time * (9.0 + u_speak * 9.0)) * 0.5 + 0.5;
+      rip *= (u_speak * 0.8 + u_energy * 0.55 + u_awake * 0.45) * (1.0 - rOrig / R);
 
-      // Voice Reactive Shockwaves (sound ripples through crystal)
-      float shockwave = sin(r * 20.0 - u_time * (10.0 + u_speak * 7.0)) * 0.5 + 0.5;
-      shockwave *= (u_speak * 0.75 + u_energy * 0.65 + u_awake * 0.6) * (1.0 - r / R);
+      // Awakening: a bright ring expanding from the heart to the shell
+      float ring = 0.0;
+      if (u_awake > 0.01) {
+        ring = (1.0 - smoothstep(0.0, 0.05, abs(rOrig - fract(u_time * 0.55) * R)))
+          * u_awake * 0.8;
+      }
 
-      // Vivid Mana Ribbon Veins
-      float vein = pow(max(0.0, 1.0 - abs(n - 0.48)), 6.0);
-
-      // Saturated Color Synthesis
-      vec3 sliceCol = mix(u_base_col, u_core_col, clamp(coreDensity * 0.85 + shockwave * 0.5, 0.0, 1.0));
-      vec3 veinCol = mix(u_core_col, u_base_col, 0.35);
-
-      float dens = coreDensity * 0.75 + vein * 1.1 + shockwave * 0.55;
-      accumEnergy += (sliceCol * (coreDensity * 0.75 + shockwave * 0.55) + veinCol * (vein * 1.1)) * stepSize * (1.2 + u_speak * 0.9 + u_energy * 0.8 + u_awake * 0.8);
+      vec3 col = mix(u_base_col * 0.14, u_base_col, wisp);
+      col = mix(col, u_core_col, clamp(core * 1.15 + rip * 0.6 + ring, 0.0, 1.0));
+      float dens = core * 0.85 + wisp * 0.28 + rip * 0.35 + ring * 0.5;
+      accum += col * dens * stepSize
+        * (1.15 + u_speak * 1.0 + u_energy * 0.8 + u_awake * 0.8 + u_think * 0.25);
     }
-    curPos += r_dir * stepSize;
+    pos += rd * stepSize;
   }
 
-  // 3D Lighting & Crystal Facets
-  vec3 light1 = normalize(vec3(0.5, 0.85, 0.8));
-  vec3 light2 = normalize(vec3(-0.7, -0.4, 0.7));
-  vec3 refVec = reflect(rd, fn);
-  float spec1 = pow(max(0.0, dot(refVec, light1)), 28.0);
-  float spec2 = pow(max(0.0, dot(refVec, light2)), 14.0);
+  // Crisp fresnel rim + a single soft top light for form
+  float fres = pow(1.0 - max(0.0, dot(-rd, nrm)), 2.6);
+  vec3 body = accum;
+  body += mix(u_base_col, u_core_col, 0.55) * fres
+    * (0.55 + u_speak * 0.5 + u_energy * 0.35 + u_listen * 0.25 + u_awake * 0.4);
+  float lit = pow(
+    max(0.0, dot(reflect(rd, nrm), normalize(vec3(0.45, 0.8, 0.75)))),
+    18.0
+  );
+  body += mix(u_core_col, vec3(1.0), 0.3) * lit * 0.3;
 
-  // Fresnel Rim Reflection
-  float fresnel = pow(1.0 - max(0.0, dot(-rd, fn)), 3.0);
+  // State reactivity: mood rim, listening teal, error ember flicker
+  body = mix(body, u_mood, fres * 0.3);
+  body = mix(body, vec3(0.13, 0.68, 0.7), u_listen * 0.32);
+  float flick = 1.0 - u_error * 0.3 * (0.5 + 0.5 * sin(u_time * 24.0));
+  body = mix(body, vec3(0.75, 0.16, 0.11), u_error * 0.45);
+  body *= flick;
 
-  // Final Crystal Composition
-  vec3 crystalCol = gemDark + accumEnergy;
-  crystalCol += u_base_col * fresnel * 0.65;
-  crystalCol += mix(u_base_col, u_core_col, 0.6) * (spec1 * 0.75 + spec2 * 0.25);
-  crystalCol += mix(u_core_col, u_base_col, 0.4) * seam * 0.65;
+  vec3 outCol = body + auraCol * 0.5;
+  float vig = 1.0 - smoothstep(0.28, 1.0, r2d);
+  outCol *= mix(0.45, 1.0, vig);
 
-  // Reactivity with Mood / Listening / Error
-  crystalCol = mix(crystalCol, u_mood, clamp(fresnel * 0.35, 0.0, 1.0));
-  crystalCol = mix(crystalCol, vec3(0.1, 0.65, 0.75), u_listen * 0.3);
-  crystalCol = mix(crystalCol, vec3(0.75, 0.15, 0.12), u_error * 0.45);
-
-  // Blend Crystal Surface with Atmosphere
-  float bodyEdge = smoothstep(R + 0.02, R - 0.03, r2d);
-  vec3 finalCol = mix(auraCol, crystalCol + auraCol * 0.25, bodyEdge);
-
-  // Soft Vignette
-  float vig = smoothstep(0.95, 0.25, r2d);
-  finalCol *= mix(0.45, 1.0, vig);
-
-  // Tone Map & Gamma correct to guarantee vivid, saturated, magical colors (NO FLAT WHITE!)
-  vec3 graded = toneMapACES(finalCol * 1.35);
-  graded = pow(graded, vec3(0.92)); // Rich contrast boost
-
+  vec3 graded = pow(toneMapACES(outCol * 1.3), vec3(0.92));
   gl_FragColor = vec4(graded, 1.0);
 }
 `;
@@ -409,8 +376,8 @@ export function OrbCanvas({
         return;
       }
       gl = canvas.getContext("webgl", {
+        alpha: true,
         antialias: false,
-        alpha: false,
         powerPreference: "high-performance",
       }) as WebGLRenderingContext | null;
       if (!gl || gl.isContextLost()) {

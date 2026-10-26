@@ -1,10 +1,9 @@
 import { generateText } from "ai";
 import { env, hasGemma } from "../../config/env.js";
-import { GEMMA_MODEL_ID, GEMMA_PROVIDER, getGemmaModel } from "./provider.js";
+import { GEMMA_MODEL_ID, getGemmaModel, providerLabel } from "./provider.js";
 
 // Dev verification chain (no full game session needed):
-//   OPENROUTER_API_KEY → Vercel AI SDK → OpenRouter gateway → model, or
-//   GOOGLE_GENERATIVE_AI_API_KEY → Vercel AI SDK → Google provider → Gemma
+//   GOOGLE_GENERATIVE_AI_API_KEY → Vercel AI SDK → Google provider → Gemma.
 //
 // Sends a trivial prompt ("write a short joke") so the check proves the
 // model round-trips without spending tokens on a full game turn.
@@ -17,16 +16,13 @@ import { GEMMA_MODEL_ID, GEMMA_PROVIDER, getGemmaModel } from "./provider.js";
 // network handles are draining. Set process.exitCode and return instead.
 
 async function main(): Promise<number> {
-  console.log(`[ai:check] provider: ${GEMMA_PROVIDER}, model: ${GEMMA_MODEL_ID}`);
+  console.log(`[ai:check] provider: ${providerLabel()}, model: ${GEMMA_MODEL_ID}`);
   console.log(
-    `[ai:check] OPENROUTER_API_KEY: ${env.openrouterApiKey ? "set" : "MISSING"}`,
-  );
-  console.log(
-    `[ai:check] GOOGLE_GENERATIVE_AI_API_KEY: ${env.googleApiKey ? "set" : "MISSING"}`,
+    `[ai:check] GOOGLE_GENERATIVE_AI_API_KEY: ${env.googleApiKey ? `set (…${env.googleApiKey.slice(-4)})` : "MISSING"}`,
   );
   if (!hasGemma) {
     console.error(
-      "[ai:check] Set OPENROUTER_API_KEY in .env (free models at https://openrouter.ai) or GOOGLE_GENERATIVE_AI_API_KEY (https://aistudio.google.com).",
+      "[ai:check] Set GOOGLE_GENERATIVE_AI_API_KEY in .env (https://aistudio.google.com).",
     );
     return 2;
   }
@@ -35,9 +31,6 @@ async function main(): Promise<number> {
     const { text, usage, finishReason } = await generateText({
       model: getGemmaModel(),
       prompt: "Write a short joke (one or two sentences).",
-      temperature: 0.7,
-      maxOutputTokens: 512,
-      maxRetries: 1,
     });
 
     if (finishReason === "content-filter" || !text.trim()) {

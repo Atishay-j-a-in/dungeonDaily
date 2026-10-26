@@ -186,7 +186,8 @@ export const CompleteExerciseRequestSchema = z.object({
 export type CompleteExerciseRequest = z.infer<typeof CompleteExerciseRequestSchema>;
 
 export const SynthesizeRequestSchema = z.object({
-  text: z.string().min(1).max(1000),
+  // Full DM turns (narration + exercise prompt) routinely exceed 1000.
+  text: z.string().min(1).max(4000),
 });
 export type SynthesizeRequest = z.infer<typeof SynthesizeRequestSchema>;
 

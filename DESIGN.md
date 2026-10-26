@@ -4,24 +4,26 @@ Ember Dungeon theme for the DungeonsDaily session UI (product register).
 
 ## Theme
 
-Dark-only, mobile-first, orb-led. Green-black stone surfaces carry the
-adventure; molten gold appears only for DM speech, exercise calls, and
-victory. Depth comes from surface lightness steps, never shadows.
+Dark-only, mobile-first, orb-led. Dark green-black stone saturated with
+vibrant, bright dungeon green carries the adventure; molten gold appears
+only for DM speech, exercise calls, and victory. Depth comes from surface
+lightness steps, never shadows.
 
 ## Palette (OKLCH)
 
 | Role | Token | Value |
 |---|---|---|
-| App bg | `--bg-0` | `oklch(11% 0.022 160)` |
-| Raised / panel / elevated | `--bg-1/2/3` | `15.5% / 20.5% / 25.5%`, chroma ~0.03, hue 160 |
-| Body / secondary / caption text | `--ink/dim/faint` | `93% / 76% / 68%`, green-tinted |
-| Accent (actions, DM, victory) | `--gold` | `oklch(79% 0.135 86)` |
-| Accent hover / borders | `--gold-soft/deep` | `72% / 60%` same hue |
-| Exercise wash | `--gold-wash` | gold at 9% alpha |
-| Danger / success / warning | `--ember/moss/amber-note` | muted red `66%/0.13/28`, moss `76%/0.11/158`, amber `78%/0.12/78` |
-| Hairlines / focus | `--line / --focus` | `29%/0.03/160`, gold |
+| App bg | `--bg-0` | `oklch(13% 0.05 155)` |
+| Raised / panel / elevated | `--bg-1/2/3` | `18% / 23.5% / 29%`, chroma 0.06–0.075, hue 155 |
+| Body / secondary / caption text | `--ink/dim/faint` | `96% / 84% / 73%`, green-tinted |
+| Accent (actions, DM, victory) | `--gold` | `oklch(84% 0.16 90)` |
+| Accent hover / borders | `--gold-soft/deep` | `77% / 67%` same hue |
+| Exercise wash | `--gold-wash` | gold at 12% alpha |
+| Highlight green | `--jade/moss` | vibrant `84%/0.2/150`, `84%/0.19/150` |
+| Danger / warning | `--ember/amber-note` | bright red `72%/0.17/28`, amber `84%/0.15/80` |
+| Hairlines / focus | `--line / --focus` | `35%/0.06/155`, gold |
 
-Body text contrasts: ink ~15:1, dim ~7:1, faint ~5:1, gold ~8:1 on `--bg-0`.
+Body text contrasts: ink ~17:1, dim ~11:1, faint ~7:1, gold ~12:1 on `--bg-0`.
 
 ## Typography
 

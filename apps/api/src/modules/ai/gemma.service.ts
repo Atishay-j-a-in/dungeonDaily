@@ -6,7 +6,7 @@ import {
   type DungeonMasterOutput,
 } from "@dungeonsdaily/shared";
 import { setTraceAttributes } from "../../observability/sentry.js";
-import { GEMMA_MODEL_ID, GEMMA_PROVIDER, getGemmaModel } from "./provider.js";
+import { GEMMA_MODEL_ID, getGemmaModel, providerLabel } from "./provider.js";
 import { DUNGEON_MASTER_SYSTEM_PROMPT } from "./prompts/dungeon-master.js";
 import type { DungeonMasterModel } from "./types.js";
 
@@ -50,18 +50,11 @@ export class GemmaService implements DungeonMasterModel {
         // truncates the narration into unparseable fragments.
         maxOutputTokens: 4096,
         maxRetries: 1,
-        // Google-only escape hatch (Gemma server-side schemas are
-        // unsupported there too). The OpenRouter path already runs in
-        // JSON-object mode via the provider's supportsStructuredOutputs.
-        ...(GEMMA_PROVIDER === "google"
-          ? {
-              providerOptions: {
-                google: {
-                  structuredOutputs: false,
-                } satisfies GoogleLanguageModelOptions,
-              },
-            }
-          : {}),
+        providerOptions: {
+          google: {
+            structuredOutputs: false,
+          } satisfies GoogleLanguageModelOptions,
+        },
         output: Output.object({
           schema: DungeonMasterOutputSchema,
           description:
@@ -100,7 +93,7 @@ export class GemmaService implements DungeonMasterModel {
       // Never includes the API key — model id, finish reason, and a short
       // raw-text snippet so the API terminal shows what actually failed.
       throw new Error(
-        `Gemma request failed model=${GEMMA_MODEL_ID}${describeAiError(err)}: ${message}`,
+        `DM request failed provider=${providerLabel()} model=${GEMMA_MODEL_ID}${describeAiError(err)}: ${message}`,
       );
     }
   }

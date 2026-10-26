@@ -18,6 +18,8 @@ apps/web/.env
 *.log
 .DS_Store
 Thumbs.db
-
 # Vitest / coverage
 coverage/
+
+# Generated ElevenLabs audio cache (SFX / environment music)
+apps/api/.cache/

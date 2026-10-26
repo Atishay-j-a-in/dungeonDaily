@@ -3,7 +3,7 @@ import express from "express";
 import morgan from "morgan";
 import { clerkMiddleware, requireAuth } from "@clerk/express";
 import { getDb } from "./db/mongo.js";
-import { env, hasGemma } from "./config/env.js";
+import { env, hasGemma, hasElevenLabs } from "./config/env.js";
 import { sessionRouter, userRouter } from "./modules/sessions/session.routes.js";
 import { voiceRouter } from "./modules/voice/voice.controller.js";
 import { errorMiddleware, notFoundMiddleware } from "./middleware/error.js";
@@ -25,8 +25,12 @@ export function createApp(): express.Express {
       checks: {
         // MongoDB: connected to Atlas, or in-memory fallback when unconfigured.
         mongo: getDb() ? "connected" : "memory-fallback",
-        // DM narration: OpenRouter gateway, Google direct, or Fake DM.
+        // DM narration: Google provider (Gemma) or the deterministic Fake DM.
         ai: hasGemma ? `live:${env.gemmaModel}` : "fake-deterministic",
+        // DM voice + SFX + environment music via ElevenLabs, or silent.
+        voice: hasElevenLabs
+          ? `elevenlabs:${env.elevenlabsModelId}`
+          : "unavailable",
       },
     });
   });

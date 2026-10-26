@@ -1,11 +1,13 @@
 import dotenv from "dotenv";
 import path from "node:path";
 
-// Precedence (audit #4): API-local `.env` overrides the monorepo-root `.env`.
-// dotenv does NOT override already-loaded values by default, so the local
-// file must be loaded with `override: true`. The final bare lookup only
-// fills variables still unset (e.g. real process environment, CI secrets).
-dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
+// Precedence (audit #4): monorepo-root `.env`, then root `.env.local`
+// (ElevenLabs CLI onboarding key), then API-local `.env`, then the bare
+// process environment. dotenv does NOT override already-loaded values by
+// default, so later files must use `override: true`.
+const rootDir = path.resolve(process.cwd(), "../..");
+dotenv.config({ path: path.join(rootDir, ".env") });
+dotenv.config({ path: path.join(rootDir, ".env.local"), override: true });
 dotenv.config({ path: path.resolve(process.cwd(), ".env"), override: true });
 dotenv.config();
 
@@ -29,13 +31,6 @@ export const env = {
   port: parsePort(required("PORT", "4000"), 4000),
   mongodbUri: required("MONGODB_URI", ""),
   mongodbDbName: required("MONGODB_DB_NAME", "dungeonsdaily"),
-  // Audit #5: GEMMA_API_BASE_URL was a legacy Groq/OpenAI-compatible setting
-  // and has no effect — the implementation uses @ai-sdk/google. It is
-  // intentionally NOT read here; remove it from your .env.
-  // GEMMA_API_KEY is retained only as a deprecated alias for
-  // GOOGLE_GENERATIVE_AI_API_KEY (used when the Google key is absent).
-  gemmaApiKey: required("GEMMA_API_KEY", ""),
-  gemmaModel: required("GEMMA_MODEL", "gemma-4-31b-it"),
   // Google provider key (@ai-sdk/google reads GOOGLE_GENERATIVE_AI_API_KEY
   // automatically). GEMMA_API_KEY is accepted as an alias for the same key.
   // Server-side only — never expose to the frontend.
@@ -43,26 +38,30 @@ export const env = {
     "GOOGLE_GENERATIVE_AI_API_KEY",
     required("GEMMA_API_KEY", ""),
   ),
-  // OpenRouter gateway (OpenAI-compatible): when set, the DM calls
-  // GEMMA_MODEL through https://openrouter.ai/api/v1 instead of Google
-  // directly. Server-side only — never expose to the frontend.
-  openrouterApiKey: required("OPENROUTER_API_KEY", ""),
+  // Model id on Google's Gemma endpoint.
+  gemmaModel: required("GEMMA_MODEL", "gemma-4-31b-it"),
+  // ElevenLabs: DM voice (TTS), one-shot SFX, and environment music.
+  // Key lives in root `.env.local` (CLI onboarding) — server-side only.
   elevenlabsApiKey: required("ELEVENLABS_API_KEY", ""),
-  elevenlabsVoiceId: required("ELEVENLABS_VOICE_ID", ""),
-  elevenlabsModelId: required(
-    "ELEVENLABS_MODEL_ID",
-    "eleven_multilingual_v2",
+  // George — narrative male voice suited to a Dungeon Master.
+  elevenlabsVoiceId: required("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb"),
+  elevenlabsModelId: required("ELEVENLABS_MODEL_ID", "eleven_v4"),
+  elevenlabsSfxModelId: required(
+    "ELEVENLABS_SFX_MODEL_ID",
+    "eleven_text_to_sound_v2",
+  ),
+  elevenlabsMusicModelId: required(
+    "ELEVENLABS_MUSIC_MODEL_ID",
+    "music_v2_5",
   ),
   sentryDsn: required("SENTRY_DSN", ""),
   sentryEnvironment: required("SENTRY_ENVIRONMENT", "development"),
 };
 
 export const hasMongo = env.mongodbUri.length > 0;
-// Live Gemma needs either the OpenRouter key (preferred: free Gemma 3
-// models through the OpenAI-compatible gateway) or the Google provider key.
-// Without either, the deterministic Fake DM keeps the game fully playable.
-export const hasGemma =
-  env.openrouterApiKey.length > 0 || env.googleApiKey.length > 0;
-export const hasElevenLabs =
-  env.elevenlabsApiKey.length > 0 && env.elevenlabsVoiceId.length > 0;
+// Live DM needs the Google key — without it the deterministic Fake DM
+// keeps the game fully playable.
+export const hasGemma = env.googleApiKey.length > 0;
+// ElevenLabs needs only the API key — voice/model fall back to defaults.
+export const hasElevenLabs = env.elevenlabsApiKey.length > 0;
 export const hasSentry = env.sentryDsn.length > 0;

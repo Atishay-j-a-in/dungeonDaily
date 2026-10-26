@@ -1,5 +1,4 @@
-# DungeonsDaily — Backend-First MVP
-
+# DungeonsDaily
 Voice-driven fantasy fitness RPG. **Gemma is the open-weight AI core** (Dungeon Master);
 the game engine is the authoritative rules layer.
 
